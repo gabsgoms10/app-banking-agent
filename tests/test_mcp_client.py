@@ -1,10 +1,10 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
 from src.mcp_client import (
-    get_account_balance,
     check_blocked_pix_key,
+    get_account_balance,
+    search_bacen_regulations,
     transfer_pix,
-    search_bacen_regulations
 )
 
 def test_get_account_balance_success():
