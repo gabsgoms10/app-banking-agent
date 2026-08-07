@@ -132,32 +132,49 @@ def transfer_pix(origin_pix_key: str, destination_pix_key: str, amount_cents: in
             blocked = cur.fetchone()
             if blocked:
                 cur.execute(
-                    "INSERT INTO transactions (origin_character_id, destination_key, amount_cents, status, decisive_rail, reason) VALUES (%s, %s, %s, 'blocked', 'BACEN_FRAUD_LIST', %s);",
-                    (origin["id"], destination_pix_key, amount_cents, f"Blocked key: {blocked['reason']}")
-                )
-                conn.commit()
-                conn.close()
-                return {
-                    "status": "blocked",
-                    "reason": f"Destination key '{destination_pix_key}' is blocked by BACEN fraud registry: {blocked['reason']}"
-                }
-
-            cur.execute("UPDATE characters SET balance_cents = balance_cents - %s WHERE id = %s;", (amount_cents, origin["id"]))
-            cur.execute("UPDATE characters SET balance_cents = balance_cents + %s WHERE pix_key = %s;", (amount_cents, destination_pix_key))
-            cur.execute(
-                "INSERT INTO transactions (origin_character_id, destination_key, amount_cents, status, decisive_rail, reason) VALUES (%s, %s, %s, 'approved', 'EXECUTION_RAIL', 'Transaction executed successfully');",
-                (origin["id"], destination_pix_key, amount_cents)
+                """
+                INSERT INTO transactions (
+                    origin_character_id, destination_key, amount_cents, status, decisive_rail, reason
+                ) VALUES (%s, %s, %s, 'blocked', 'BACEN_FRAUD_LIST', %s);
+                """,
+                (origin["id"], destination_pix_key, amount_cents, f"Blocked key: {blocked['reason']}")
             )
-
             conn.commit()
             conn.close()
-
             return {
-                "status": "success",
-                "message": f"Successfully transferred {amount_cents / 100.0:.2f} BRL to {destination_pix_key}",
-                "amount_cents": amount_cents,
-                "new_origin_balance_cents": origin["balance_cents"] - amount_cents
+                "status": "blocked",
+                "reason": (
+                    f"Destination key '{destination_pix_key}' is blocked by BACEN fraud registry: "
+                    f"{blocked['reason']}"
+                )
             }
+
+        cur.execute(
+            "UPDATE characters SET balance_cents = balance_cents - %s WHERE id = %s;",
+            (amount_cents, origin["id"])
+        )
+        cur.execute(
+            "UPDATE characters SET balance_cents = balance_cents + %s WHERE pix_key = %s;",
+            (amount_cents, destination_pix_key)
+        )
+        cur.execute(
+            """
+            INSERT INTO transactions (
+                origin_character_id, destination_key, amount_cents, status, decisive_rail, reason
+            ) VALUES (%s, %s, %s, 'approved', 'EXECUTION_RAIL', 'Transaction executed successfully');
+            """,
+            (origin["id"], destination_pix_key, amount_cents)
+        )
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "status": "success",
+            "message": f"Successfully transferred {amount_cents / 100.0:.2f} BRL to {destination_pix_key}",
+            "amount_cents": amount_cents,
+            "new_origin_balance_cents": origin["balance_cents"] - amount_cents
+        }
 
     except Exception as e:
         logger.error(f"[Agent Tool Error] transfer_pix aborted: {str(e)}")
@@ -166,10 +183,11 @@ def transfer_pix(origin_pix_key: str, destination_pix_key: str, amount_cents: in
 @tool
 def search_bacen_regulations(query: str) -> dict:
     """
-    Performs an Agentic RAG search over Central Bank (BACEN) regulations, PIX night transfer limits, and MED fraud policies.
-    
+    Performs an Agentic RAG search over Central Bank (BACEN) regulations,
+    PIX night transfer limits, and MED fraud policies.
+
     Args:
-        query: Search prompt or question regarding financial regulations (e.g. 'limite noturno', 'MED', 'devolucao').
+        query: Search prompt or question regarding financial rules.
     """
     logger.info(f"[Agent Tool - RAG] Searching BACEN regulations for query: '{query}'")
     try:
