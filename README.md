@@ -87,7 +87,7 @@ Exposes 4 production tools using LangChain's `@tool` decorator:
 **Request Body**:
 ```json
 {
-  "message": "Qual o limite de transferência PIX no horário noturno?",
+  "message": "What is the PIX nighttime transfer limit?",
   "origin_key": "leo.vance@email.com"
 }
 ```
@@ -95,7 +95,7 @@ Exposes 4 production tools using LangChain's `@tool` decorator:
 ```json
 {
   "status": "success",
-  "reply": "De acordo com a Resolução BCB nº 142 obtida via consulta regulatória, o limite padrão para transferências PIX no período noturno (das 20h às 06h) é de R$ 1.000,00."
+  "reply": "According to Central Bank Resolution BCB Resolution No. 142 retrieved via regulatory search, the standard default limit for PIX transfers during nighttime hours (from 20:00 to 06:00) is set to R$ 1,000.00."
 }
 ```
 
@@ -103,21 +103,21 @@ Exposes 4 production tools using LangChain's `@tool` decorator:
 **Request Body**:
 ```json
 {
-  "query": "limite noturno PIX"
+  "query": "PIX nighttime limit"
 }
 ```
 **Response Body**:
 ```json
 {
   "status": "success",
-  "query": "limite noturno PIX",
+  "query": "PIX nighttime limit",
   "match_count": 1,
   "regulations": [
     {
       "resolution_code": "BCB-142",
-      "title": "Limites de Transação Noturna PIX",
+      "title": "PIX Nighttime Transaction Limits",
       "category": "pix_limits",
-      "content": "De acordo com a Resolução BCB nº 142, estabelece-se o limite padrão de R$ 1.000,00 para transações PIX realizadas no horário noturno compreendido entre 20:00 e 06:00."
+      "content": "According to Central Bank Resolution BCB Resolution No. 142, the standard default limit for PIX instant transactions executed by individuals during nighttime hours (from 20:00 to 06:00) is set to R$ 1,000.00."
     }
   ]
 }
