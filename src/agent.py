@@ -65,7 +65,10 @@ RULES & GOVERNANCE:
 def create_banking_agent(
     model_name: str | None = None, api_base: str | None = None
 ) -> Any:
-    """Initializes and returns the LangChain Tool Calling Banking Agent Executor with Native Model Fallbacks & Arize Phoenix Tracing."""
+    """Initializes and returns the LangChain Tool Calling Banking Agent Executor.
+
+    Uses Native Model Fallbacks & Arize Phoenix Tracing.
+    """
     primary_model = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
     fallback_model = os.getenv("LLM_FALLBACK_MODEL", "main_fallback")
     api_base = api_base or os.getenv(
