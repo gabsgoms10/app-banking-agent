@@ -1,8 +1,6 @@
 import logging
 import os
 
-import mlflow
-import mlflow.langchain
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
@@ -11,18 +9,29 @@ from src.mcp_client import BANKING_TOOLS
 
 logger = logging.getLogger("app-banking-agent.agent")
 
-# Initialize MLflow Agent Tracing
+# Safe MLflow Agent Tracing Import
+try:
+    import mlflow
+    import mlflow.langchain
+
+    HAS_MLFLOW = True
+except ImportError:
+    HAS_MLFLOW = False
+    logger.warning("MLflow module not found. Agent Tracing will be disabled.")
+
 MLFLOW_TRACKING_URI = os.getenv(
     "MLFLOW_TRACKING_URI",
     "http://mlflow-service.guardrails.svc.cluster.local:5000",
 )
-try:
-    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-    mlflow.set_experiment("banking-agent-tracing")
-    mlflow.langchain.autolog(log_traces=True)
-    logger.info(f"MLflow Agent Tracing enabled at URI: '{MLFLOW_TRACKING_URI}'")
-except Exception as e:
-    logger.warning(f"MLflow Agent Tracing init deferred: {e!s}")
+
+if HAS_MLFLOW:
+    try:
+        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+        mlflow.set_experiment("banking-agent-tracing")
+        mlflow.langchain.autolog(log_traces=True)
+        logger.info(f"MLflow Agent Tracing enabled at URI: '{MLFLOW_TRACKING_URI}'")
+    except Exception as e:
+        logger.warning(f"MLflow Agent Tracing init deferred: {e!s}")
 
 SYSTEM_PROMPT = """You are Enterprise X's Autonomous Banking Assistant.
 You execute banking queries, account balance checks, PIX financial transfers, and regulatory searches on behalf of users.
