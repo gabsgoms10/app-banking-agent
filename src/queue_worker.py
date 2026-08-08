@@ -153,10 +153,32 @@ def run_worker_loop():
             )
 
             # 4. Process LLM Evaluation outside DB transaction
-            # (In production, invokes run_gemini_rag_judge or local Qwen judge)
-            time.sleep(1.0)  # Simulated LLM Inference step
-            mark_job_completed(conn, job_id)
-            logger.info(f"✅ Job '{job_id}' completed successfully.")
+            try:
+                import asyncio
+                from src.judge import run_rag_judge
+
+                query = job.get("query") or "What is the PIX nighttime transaction limit?"
+                context = job.get("context") or [
+                    {
+                        "resolution_code": "BCB-142",
+                        "content": "PIX nighttime transaction limit is R$ 1,000.00 between 20:00 and 06:00.",
+                    }
+                ]
+                response_text = (
+                    job.get("response")
+                    or "The PIX nighttime limit is R$ 1,000.00 according to BACEN Resolution BCB-142."
+                )
+
+                eval_res = asyncio.run(
+                    run_rag_judge(query, context, response_text)
+                )
+                logger.info(f"⚖️ LLM Judge verdict for Job '{job_id}': {eval_res}")
+                mark_job_completed(conn, job_id)
+            except Exception as eval_err:
+                logger.error(
+                    f"LLM Judge evaluation failed for Job '{job_id}': {eval_err}"
+                )
+                mark_job_failed(conn, job_id, str(eval_err))
 
         except Exception as e:
             logger.error(f"Worker loop exception: {e!s}")

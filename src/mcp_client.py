@@ -44,10 +44,22 @@ def get_account_balance(pix_key: str) -> dict:
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute(
-                "SELECT id, name, pix_key, balance_cents, risk_profile FROM characters WHERE pix_key = %s OR name ILIKE %s;",
-                (pix_key, f"%{pix_key}%"),
-            )
+            clean_key = pix_key.strip()
+            if "@" in clean_key or "." in clean_key or clean_key.isdigit():
+                cur.execute(
+                    "SELECT id, name, pix_key, balance_cents, risk_profile FROM characters WHERE pix_key = %s;",
+                    (clean_key,),
+                )
+            else:
+                if len(clean_key) < 3:
+                    return {
+                        "status": "error",
+                        "message": "Account search term must be at least 3 characters",
+                    }
+                cur.execute(
+                    "SELECT id, name, pix_key, balance_cents, risk_profile FROM characters WHERE pix_key = %s OR name ILIKE %s ORDER BY (name ILIKE %s) DESC LIMIT 1;",
+                    (clean_key, f"%{clean_key}%", clean_key),
+                )
             account = cur.fetchone()
         conn.close()
 
