@@ -17,6 +17,9 @@ except ImportError:
                     self.tools = {getattr(t, "name", str(i)): t for i, t in enumerate(tools)}
 
                 def invoke(self, input_dict):
+                    if isinstance(input_dict, dict):
+                        input_dict.setdefault("agent_scratchpad", [])
+                        input_dict.setdefault("chat_history", [])
                     res = self.agent.invoke(input_dict)
                     if isinstance(res, dict):
                         return res

@@ -60,7 +60,11 @@ def chat_endpoint(request: ChatRequest):
     logger.info(f"Received chat request: '{request.message}'")
     try:
         response = agent_executor.invoke(
-            {"input": f"[User Key: {request.origin_key}] {request.message}"}
+            {
+                "input": f"[User Key: {request.origin_key}] {request.message}",
+                "agent_scratchpad": [],
+                "chat_history": [],
+            }
         )
         return ChatResponse(
             status="success", reply=response.get("output", "No response generated.")
