@@ -2,20 +2,15 @@ import logging
 import os
 from typing import Any
 
+from langchain.agents import AgentExecutor
+
 try:
-    from langchain.agents import create_openai_tools_agent
+    from langchain.agents import create_tool_calling_agent
 except ImportError:
     try:
-        from langchain.agents.openai_tools.base import create_openai_tools_agent
+        from langchain.agents import create_openai_tools_agent as create_tool_calling_agent
     except ImportError:
-        create_openai_tools_agent = None
-
-create_tool_calling_agent = create_openai_tools_agent
-
-try:
-    from langchain.agents import AgentExecutor
-except ImportError:
-    from langchain.agents.agent import AgentExecutor
+        create_tool_calling_agent = None
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
