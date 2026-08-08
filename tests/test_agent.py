@@ -14,6 +14,7 @@ def test_health_endpoint():
     assert data["status"] == "ok"
     assert data["service"] == "app-banking-agent"
 
+
 def test_rag_search_endpoint():
     mock_cursor = MagicMock()
     mock_cursor.fetchall.return_value = [
@@ -21,7 +22,7 @@ def test_rag_search_endpoint():
             "resolution_code": "BCB-103",
             "title": "Mecanismo Especial de Devolução (MED)",
             "category": "fraud_med",
-            "content": "Bloqueio cautelar de 72h em caso de fraude."
+            "content": "Bloqueio cautelar de 72h em caso de fraude.",
         }
     ]
     mock_conn = MagicMock()

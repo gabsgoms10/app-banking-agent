@@ -18,29 +18,39 @@ RULES & GOVERNANCE:
 5. Be polite, precise, and concise.
 """
 
-def create_banking_agent(model_name: str | None = None, api_base: str | None = None) -> AgentExecutor:
+
+def create_banking_agent(
+    model_name: str | None = None, api_base: str | None = None
+) -> AgentExecutor:
     """
     Initializes and returns the LangChain ReAct / OpenAI Tools Banking Agent Executor.
     """
     model_name = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
-    api_base = api_base or os.getenv("OPENAI_API_BASE", "http://qwen-engine-service.guardrails.svc.cluster.local:11434/v1")
+    api_base = api_base or os.getenv(
+        "OPENAI_API_BASE",
+        "http://qwen-engine-service.guardrails.svc.cluster.local:11434/v1",
+    )
     api_key = os.getenv("OPENAI_API_KEY", "ollama")
 
-    logger.info(f"Initializing LangChain Banking Agent with Model: '{model_name}' at Endpoint: '{api_base}'")
+    logger.info(
+        f"Initializing LangChain Banking Agent with Model: '{model_name}' at Endpoint: '{api_base}'"
+    )
 
     llm = ChatOpenAI(
         model_name=model_name,
         openai_api_base=api_base,
         openai_api_key=api_key,
-        temperature=0.1
+        temperature=0.1,
     )
 
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        MessagesPlaceholder(variable_name="chat_history", optional=True),
-        ("human", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            MessagesPlaceholder(variable_name="chat_history", optional=True),
+            ("human", "{input}"),
+            MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ]
+    )
 
     agent = create_openai_tools_agent(llm, BANKING_TOOLS, prompt)
 
@@ -49,5 +59,5 @@ def create_banking_agent(model_name: str | None = None, api_base: str | None = N
         tools=BANKING_TOOLS,
         verbose=True,
         max_iterations=5,
-        handle_parsing_errors=True
+        handle_parsing_errors=True,
     )

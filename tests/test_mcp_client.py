@@ -15,7 +15,7 @@ def test_get_account_balance_success():
         "name": "Leo Vance",
         "pix_key": "leo.vance@email.com",
         "balance_cents": 250000,
-        "risk_profile": "conservative"
+        "risk_profile": "conservative",
     }
     mock_conn = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
@@ -26,12 +26,13 @@ def test_get_account_balance_success():
         assert res["name"] == "Leo Vance"
         assert res["balance_brl"] == 2500.0
 
+
 def test_check_blocked_pix_key_blocked():
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = {
         "pix_key": "fraudster@pix.com",
         "reason": "PIX key flagged for malicious fraud",
-        "added_at": "2026-01-01 00:00:00"
+        "added_at": "2026-01-01 00:00:00",
     }
     mock_conn = MagicMock()
     mock_conn.cursor.return_value.__enter__.return_value = mock_cursor
@@ -41,14 +42,18 @@ def test_check_blocked_pix_key_blocked():
         assert res["status"] == "blocked"
         assert res["is_fraud"] is True
 
+
 def test_transfer_pix_invalid_amount():
-    res = transfer_pix.invoke({
-        "origin_pix_key": "leo.vance@email.com",
-        "destination_pix_key": "maria.silva@email.com",
-        "amount_cents": -500
-    })
+    res = transfer_pix.invoke(
+        {
+            "origin_pix_key": "leo.vance@email.com",
+            "destination_pix_key": "maria.silva@email.com",
+            "amount_cents": -500,
+        }
+    )
     assert res["status"] == "error"
     assert "greater than zero" in res["message"]
+
 
 def test_search_bacen_regulations_success():
     mock_cursor = MagicMock()
@@ -57,7 +62,7 @@ def test_search_bacen_regulations_success():
             "resolution_code": "BCB-142",
             "title": "Limites de Transação Noturna PIX",
             "category": "pix_limits",
-            "content": "Limite de R$ 1.000,00 entre 20h e 06h."
+            "content": "Limite de R$ 1.000,00 entre 20h e 06h.",
         }
     ]
     mock_conn = MagicMock()
