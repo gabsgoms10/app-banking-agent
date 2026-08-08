@@ -3,14 +3,14 @@ import os
 from typing import Any
 
 try:
-    from langchain.agents import AgentExecutor, create_tool_calling_agent
+    from langchain.agents import create_tool_calling_agent
 except Exception:
-    try:
-        from langchain.agents.agent import AgentExecutor
-        from langchain.agents import create_tool_calling_agent
-    except Exception:
-        AgentExecutor = Any
-        create_tool_calling_agent = None
+    from langchain.agents import create_openai_tools_agent as create_tool_calling_agent
+
+try:
+    from langchain.agents import AgentExecutor
+except Exception:
+    from langchain.agents.agent import AgentExecutor
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
