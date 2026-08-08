@@ -7,7 +7,6 @@ Features:
 3. Automatic Stale Lock Recovery (Resets crashed 'processing' jobs older than 10 mins back to 'pending').
 """
 
-import asyncio
 import logging
 import os
 import time
@@ -102,7 +101,7 @@ def mark_job_completed(conn, job_id: str):
                 (job_id,),
             )
         conn.commit()
-    except Exception as e:
+    except Exception:
         conn.rollback()
 
 
@@ -118,7 +117,7 @@ def mark_job_failed(conn, job_id: str, error_msg: str):
                 (error_msg, job_id),
             )
         conn.commit()
-    except Exception as e:
+    except Exception:
         conn.rollback()
 
 
