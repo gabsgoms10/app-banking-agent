@@ -118,7 +118,15 @@ def create_banking_agent(
         ]
     )
 
-    agent = create_tool_calling_agent(llm, BANKING_TOOLS, prompt)
+    if create_tool_calling_agent is not None:
+        agent = create_tool_calling_agent(llm, BANKING_TOOLS, prompt)
+    else:
+        try:
+            from langchain.agents import create_openai_tools_agent
+            agent = create_openai_tools_agent(llm, BANKING_TOOLS, prompt)
+        except Exception:
+            llm_with_tools = llm.bind_tools(BANKING_TOOLS)
+            agent = prompt | llm_with_tools
 
     return AgentExecutor(
         agent=agent,
