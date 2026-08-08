@@ -1,15 +1,17 @@
 import logging
 import os
+from typing import Any
 
 try:
     from langchain.agents import AgentExecutor, create_tool_calling_agent
-except ImportError:
-    from langchain.agents import create_tool_calling_agent
-
+except Exception:
     try:
         from langchain.agents.agent import AgentExecutor
-    except ImportError:
-        from langchain.agents.execution import AgentExecutor
+        from langchain.agents import create_tool_calling_agent
+    except Exception:
+        AgentExecutor = Any
+        create_tool_calling_agent = None
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
@@ -55,7 +57,7 @@ RULES & GOVERNANCE:
 
 def create_banking_agent(
     model_name: str | None = None, api_base: str | None = None
-) -> AgentExecutor:
+) -> Any:
     """Initializes and returns the LangChain Tool Calling Banking Agent Executor with MLflow Tracing."""
     model_name = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
     api_base = api_base or os.getenv(
