@@ -2,13 +2,22 @@ import logging
 import os
 from typing import Any
 
-from langchain.agents import AgentExecutor
-
 try:
-    from langchain.agents import create_tool_calling_agent
+    from langchain.agents import AgentExecutor
 except ImportError:
     try:
-        from langchain.agents import create_openai_tools_agent as create_tool_calling_agent
+        from langchain.agents.agent import AgentExecutor
+    except ImportError:
+        try:
+            from langchain.agents.executor import AgentExecutor
+        except ImportError:
+            AgentExecutor = Any
+
+try:
+    from langchain.agents import create_openai_tools_agent as create_tool_calling_agent
+except ImportError:
+    try:
+        from langchain.agents import create_tool_calling_agent
     except ImportError:
         create_tool_calling_agent = None
 
