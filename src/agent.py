@@ -19,7 +19,7 @@ from src.mcp_client import BANKING_TOOLS
 
 logger = logging.getLogger("app-banking-agent.agent")
 
-# Safe Arize Phoenix Agent Tracing Initialization (OpenInference / OpenTelemetry)
+# Safe Standard OpenTelemetry / OpenInference Agent Tracing to Arize Phoenix
 PHOENIX_COLLECTOR_HTTP_ENDPOINT = os.getenv(
     "PHOENIX_COLLECTOR_HTTP_ENDPOINT",
     "http://arize-phoenix-service.guardrails.svc.cluster.local:4318",
@@ -27,15 +27,23 @@ PHOENIX_COLLECTOR_HTTP_ENDPOINT = os.getenv(
 
 try:
     from openinference.instrumentation.langchain import LangChainInstrumentor
-    from phoenix.otel import register
-
-    tracer_provider = register(
-        project_name="banking-agent-tracing",
-        endpoint=f"{PHOENIX_COLLECTOR_HTTP_ENDPOINT}/v1/traces",
+    from opentelemetry import trace
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+        OTLPSpanExporter,
     )
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+    tracer_provider = TracerProvider()
+    tracer_provider.add_span_processor(
+        BatchSpanProcessor(
+            OTLPSpanExporter(endpoint=f"{PHOENIX_COLLECTOR_HTTP_ENDPOINT}/v1/traces")
+        )
+    )
+    trace.set_tracer_provider(tracer_provider)
     LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
     logger.info(
-        f"Arize Phoenix Agent Tracing enabled at Endpoint: '{PHOENIX_COLLECTOR_HTTP_ENDPOINT}'"
+        f"OpenTelemetry / OpenInference Agent Tracing enabled for Arize Phoenix: '{PHOENIX_COLLECTOR_HTTP_ENDPOINT}'"
     )
 except Exception as e:
     logger.warning(f"Arize Phoenix Agent Tracing init deferred/skipped: {e!s}")
