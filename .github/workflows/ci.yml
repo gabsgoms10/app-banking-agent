@@ -42,7 +42,7 @@ jobs:
       - name: Run Black Code Formatter Check
         run: |
           echo "🎨 Checking code formatting with Black..."
-          sed -i 's/\r$//' src/*.py tests/*.py || true
+          python -c "import glob; [open(f, 'wb').write(open(f, 'rb').read().replace(b'\r\n', b'\n')) for f in glob.glob('**/*.py', recursive=True)]"
           black --check --fast src/ tests/
 
       - name: Run Bandit SAST Security Scan
