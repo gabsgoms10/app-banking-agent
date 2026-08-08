@@ -7,6 +7,7 @@ from src.mcp_client import (
     transfer_pix,
 )
 
+
 def test_get_account_balance_success():
     mock_cursor = MagicMock()
     mock_cursor.fetchone.return_value = {
