@@ -43,7 +43,7 @@ logger = logging.getLogger("app-banking-agent.agent")
 # Safe Standard OpenTelemetry / OpenInference Agent Tracing to Arize Phoenix
 PHOENIX_COLLECTOR_HTTP_ENDPOINT = os.getenv(
     "PHOENIX_COLLECTOR_HTTP_ENDPOINT",
-    "http://arize-phoenix-service.guardrails.svc.cluster.local:4318",
+    "http://arize-phoenix-service.guardrails.svc.cluster.local:6006",
 )
 
 tracer_provider = None
