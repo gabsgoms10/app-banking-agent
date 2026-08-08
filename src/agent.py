@@ -18,7 +18,7 @@ RULES & GOVERNANCE:
 5. Be polite, precise, and concise.
 """
 
-def create_banking_agent(model_name: str = None, api_base: str = None) -> AgentExecutor:
+def create_banking_agent(model_name: str | None = None, api_base: str | None = None) -> AgentExecutor:
     """
     Initializes and returns the LangChain ReAct / OpenAI Tools Banking Agent Executor.
     """
