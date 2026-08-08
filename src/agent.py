@@ -6,12 +6,21 @@ try:
     from langchain.agents import AgentExecutor
 except ImportError:
     try:
-        from langchain.agents.agent import AgentExecutor
+        from langchain.agents.agent_executor import AgentExecutor
     except ImportError:
         try:
-            from langchain.agents.executor import AgentExecutor
+            from langchain.agents.agent import AgentExecutor
         except ImportError:
-            AgentExecutor = Any
+            class AgentExecutor:
+                def __init__(self, agent, tools, **kwargs):
+                    self.agent = agent
+                    self.tools = {getattr(t, "name", str(i)): t for i, t in enumerate(tools)}
+
+                def invoke(self, input_dict):
+                    res = self.agent.invoke(input_dict)
+                    if isinstance(res, dict):
+                        return res
+                    return {"output": getattr(res, "content", str(res))}
 
 try:
     from langchain.agents import create_openai_tools_agent as create_tool_calling_agent
