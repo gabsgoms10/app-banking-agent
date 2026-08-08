@@ -225,18 +225,28 @@ def search_bacen_regulations(query: str) -> dict:
         query: Search prompt or question regarding financial rules.
     """
     logger.info(f"[Agent Tool - RAG] Searching BACEN regulations for query: '{query}'")
+    words = [w.strip() for w in query.lower().split() if len(w.strip()) > 2]
+    if not words:
+        words = [query.lower().strip()]
+
+    conditions = []
+    params = []
+    for w in words:
+        conditions.append("(title ILIKE %s OR content ILIKE %s OR %s = ANY(keywords))")
+        params.extend([f"%{w}%", f"%{w}%", w])
+
+    where_clause = " OR ".join(conditions)
+    sql = f"""
+        SELECT resolution_code, title, category, content
+        FROM bacen_regulations
+        WHERE {where_clause}
+        ORDER BY created_at DESC;
+    """
+
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT resolution_code, title, category, content
-                FROM bacen_regulations
-                WHERE title ILIKE %s OR content ILIKE %s OR %s = ANY(keywords)
-                ORDER BY created_at DESC;
-                """,
-                (f"%{query}%", f"%{query}%", query.lower()),
-            )
+            cur.execute(sql, tuple(params))
             results = cur.fetchall()
         conn.close()
 
