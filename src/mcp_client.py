@@ -176,7 +176,7 @@ def transfer_pix(origin_pix_key: str, destination_pix_key: str, amount_cents: in
         }
 
     except Exception as e:
-        logger.error(f"[Agent Tool Error] transfer_pix aborted: {str(e)}")
+        logger.error(f"[Agent Tool Error] transfer_pix aborted: {e!s}")
         return {"status": "error", "message": str(e)}
 
 @tool
@@ -229,7 +229,7 @@ def search_bacen_regulations(query: str) -> dict:
             "message": f"No specific BACEN regulation matched query '{query}'."
         }
     except Exception as e:
-        logger.error(f"[Agent Tool Error] search_bacen_regulations failed: {str(e)}")
+        logger.error(f"[Agent Tool Error] search_bacen_regulations failed: {e!s}")
         return {"status": "error", "message": str(e)}
 
 # Export toolset for LangChain Agentic Loop
