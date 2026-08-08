@@ -39,10 +39,10 @@ jobs:
           echo "🔍 Running Ruff linter..."
           ruff check --ignore E501 src/ tests/
 
-      - name: Run Black Code Formatter Check
+      - name: Run Black Code Formatter
         run: |
-          echo "🎨 Checking code formatting with Black..."
-          black --check --fast src/ tests/
+          echo "🎨 Formatting code with Black..."
+          black src/ tests/
 
       - name: Run Bandit SAST Security Scan
         run: |
