@@ -1,4 +1,5 @@
 """Unit test suite for app-banking-agent."""
+
 from src.agent import SYSTEM_PROMPT
 from src.judge import FALLBACK_JUDGE_MODELS
 from src.mcp_client import BANKING_TOOLS
