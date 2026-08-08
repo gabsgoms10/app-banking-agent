@@ -19,29 +19,26 @@ from src.mcp_client import BANKING_TOOLS
 
 logger = logging.getLogger("app-banking-agent.agent")
 
-# Safe MLflow Agent Tracing Import
-try:
-    import mlflow
-    import mlflow.langchain
-
-    HAS_MLFLOW = True
-except ImportError:
-    HAS_MLFLOW = False
-    logger.warning("MLflow module not found. Agent Tracing will be disabled.")
-
-MLFLOW_TRACKING_URI = os.getenv(
-    "MLFLOW_TRACKING_URI",
-    "http://mlflow-service.guardrails.svc.cluster.local:5000",
+# Safe Arize Phoenix Agent Tracing Initialization (OpenInference / OpenTelemetry)
+PHOENIX_COLLECTOR_HTTP_ENDPOINT = os.getenv(
+    "PHOENIX_COLLECTOR_HTTP_ENDPOINT",
+    "http://arize-phoenix-service.guardrails.svc.cluster.local:4318",
 )
 
-if HAS_MLFLOW:
-    try:
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-        mlflow.set_experiment("banking-agent-tracing")
-        mlflow.langchain.autolog(log_traces=True)
-        logger.info(f"MLflow Agent Tracing enabled at URI: '{MLFLOW_TRACKING_URI}'")
-    except Exception as e:
-        logger.warning(f"MLflow Agent Tracing init deferred: {e!s}")
+try:
+    from openinference.instrumentation.langchain import LangChainInstrumentor
+    from phoenix.otel import register
+
+    tracer_provider = register(
+        project_name="banking-agent-tracing",
+        endpoint=f"{PHOENIX_COLLECTOR_HTTP_ENDPOINT}/v1/traces",
+    )
+    LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+    logger.info(
+        f"Arize Phoenix Agent Tracing enabled at Endpoint: '{PHOENIX_COLLECTOR_HTTP_ENDPOINT}'"
+    )
+except Exception as e:
+    logger.warning(f"Arize Phoenix Agent Tracing init deferred/skipped: {e!s}")
 
 SYSTEM_PROMPT = """You are Enterprise X's Autonomous Banking Assistant.
 You execute banking queries, account balance checks, PIX financial transfers, and regulatory searches on behalf of users.
@@ -58,7 +55,7 @@ RULES & GOVERNANCE:
 def create_banking_agent(
     model_name: str | None = None, api_base: str | None = None
 ) -> Any:
-    """Initializes and returns the LangChain Tool Calling Banking Agent Executor with MLflow Tracing."""
+    """Initializes and returns the LangChain Tool Calling Banking Agent Executor with Arize Phoenix Tracing."""
     model_name = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
     api_base = api_base or os.getenv(
         "OPENAI_API_BASE",
