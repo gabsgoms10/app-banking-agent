@@ -63,8 +63,12 @@ RULES & GOVERNANCE:
 def create_banking_agent(
     model_name: str | None = None, api_base: str | None = None
 ) -> Any:
-    """Initializes and returns the LangChain Tool Calling Banking Agent Executor with Arize Phoenix Tracing."""
-    model_name = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
+    """
+    Initializes and returns the LangChain Tool Calling Banking Agent Executor
+    with Native Model Fallbacks & Arize Phoenix Tracing.
+    """
+    primary_model = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
+    fallback_model = os.getenv("LLM_FALLBACK_MODEL", "main_fallback")
     api_base = api_base or os.getenv(
         "OPENAI_API_BASE",
         "http://qwen-engine-service.guardrails.svc.cluster.local:11434/v1",
@@ -72,15 +76,27 @@ def create_banking_agent(
     api_key = os.getenv("OPENAI_API_KEY", "ollama")
 
     logger.info(
-        f"Initializing LangChain Banking Agent with Model: '{model_name}' at Endpoint: '{api_base}'"
+        f"Initializing Primary LLM Engine: '{primary_model}' (Fallback: '{fallback_model}') at Endpoint: '{api_base}'"
     )
 
-    llm = ChatOpenAI(
-        model_name=model_name,
+    primary_llm = ChatOpenAI(
+        model_name=primary_model,
         openai_api_base=api_base,
         openai_api_key=api_key,
         temperature=0.1,
+        request_timeout=30.0,
     )
+
+    fallback_llm = ChatOpenAI(
+        model_name=fallback_model,
+        openai_api_base=api_base,
+        openai_api_key=api_key,
+        temperature=0.1,
+        request_timeout=30.0,
+    )
+
+    # Resilient Fallback Chain: Switches to fallback_llm on error or timeout
+    llm = primary_llm.with_fallbacks([fallback_llm])
 
     prompt = ChatPromptTemplate.from_messages(
         [
