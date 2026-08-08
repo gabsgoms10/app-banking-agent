@@ -42,7 +42,7 @@ jobs:
       - name: Run Black Code Formatter Check
         run: |
           echo "🎨 Checking code formatting with Black..."
-          python -c "import glob; [open(f, 'wb').write(open(f, 'rb').read().replace(b'\r\n', b'\n')) for f in glob.glob('**/*.py', recursive=True)]"
+          python -c "import glob; [open(f, 'wb').write(open(f, 'rb').read().replace(b'\r\n', b'\n')) for f in glob.glob('src/**/*.py', recursive=True) + glob.glob('tests/**/*.py', recursive=True)]"
           black --check --fast src/ tests/
 
       - name: Run Bandit SAST Security Scan
@@ -53,7 +53,7 @@ jobs:
       - name: Run Automated Unit Tests
         run: |
           echo "🧪 Running Pytest unit test suite..."
-          pytest -v tests/
+          PYTHONPATH=. pytest -v tests/
 
   # STAGE 2: BUILD & PUBLISH DOCKER IMAGE TO GHCR WITH GHA LAYER CACHING
   build-and-push:
