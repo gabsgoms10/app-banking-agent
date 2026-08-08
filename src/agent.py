@@ -1,7 +1,15 @@
 import logging
 import os
 
-from langchain.agents import AgentExecutor, create_tool_calling_agent
+try:
+    from langchain.agents import AgentExecutor, create_tool_calling_agent
+except ImportError:
+    from langchain.agents import create_tool_calling_agent
+
+    try:
+        from langchain.agents.agent import AgentExecutor
+    except ImportError:
+        from langchain.agents.execution import AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
