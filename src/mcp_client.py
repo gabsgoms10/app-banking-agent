@@ -1,6 +1,5 @@
-import os
 import logging
-import httpx
+import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from langchain.tools import tool

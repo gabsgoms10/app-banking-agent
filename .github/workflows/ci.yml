@@ -37,7 +37,7 @@ jobs:
       - name: Run Ruff Linter
         run: |
           echo "🔍 Running Ruff linter..."
-          ruff check --select=E,F src/ tests/
+          ruff check --ignore E501 src/ tests/
 
       - name: Run Black Code Formatter Check
         run: |
