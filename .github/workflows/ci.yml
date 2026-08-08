@@ -42,7 +42,7 @@ jobs:
       - name: Run Black Code Formatter Check
         run: |
           echo "🎨 Checking code formatting with Black..."
-          black --check src/ tests/
+          black --check --fast src/ tests/
 
       - name: Run Bandit SAST Security Scan
         run: |
