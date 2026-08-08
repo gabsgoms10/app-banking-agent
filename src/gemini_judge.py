@@ -1,6 +1,11 @@
 """
-High-Performance Asynchronous Gemini 2.5 Flash RAG Judge.
-Evaluates public BACEN regulatory RAG retrieval & faithfulness with zero local CPU contention.
+High-Performance Asynchronous Gemini RAG Judge with Multi-Model Fallback Chain.
+
+Fallback Sequence:
+1. gemini-2.5-flash (Primary High-Speed Judge)
+2. gemini-1.5-flash (Resilient Secondary Judge)
+3. gemini-2.0-flash-lite (Ultra-Fast Fallback)
+4. gemini-1.5-pro (High-Capacity Deep Reasoning Fallback)
 """
 
 import asyncio
@@ -15,6 +20,14 @@ logger = logging.getLogger("app-banking-agent.gemini_judge")
 
 # Global persistent httpx client to eliminate connection overhead (Bottleneck Fix)
 _http_client: httpx.AsyncClient | None = None
+
+# Resilient Gemini Model Fallback Cascade List
+GEMINI_FALLBACK_MODELS = [
+    "gemini-2.5-flash",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-pro",
+]
 
 
 def get_http_client() -> httpx.AsyncClient:
@@ -43,17 +56,15 @@ async def run_gemini_rag_judge(
     user_query: str, retrieved_chunks: list[dict[str, Any]], agent_response: str
 ) -> dict[str, Any]:
     """
-    Executes Gemini 2.5 Flash LLM-as-a-Judge for RAG Evaluation over public BACEN regulations.
-    Enforces structured JSON output via Gemini 2.5 Flash Native Schema.
+    Executes Gemini LLM-as-a-Judge with Automatic Multi-Model Fallback.
+    Tries gemini-2.5-flash -> gemini-1.5-flash -> gemini-2.0-flash-lite -> gemini-1.5-pro.
     """
     gemini_key = os.getenv("GEMINI_API_KEY", "")
     if not gemini_key:
         logger.warning(
-            "GEMINI_API_KEY not configured. Skipping Gemini 2.5 Flash evaluation."
+            "GEMINI_API_KEY not configured. Skipping Gemini Flash evaluation."
         )
         return {"status": "skipped", "reason": "GEMINI_API_KEY missing"}
-
-    judge_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
 
     judge_system_instruction = (
         "You are an Elite Staff AI Engineer RAG Judge. Evaluate the RAG retrieval accuracy and answer faithfulness "
@@ -100,22 +111,41 @@ async def run_gemini_rag_judge(
     }
 
     client = get_http_client()
-    try:
-        response = await client.post(judge_url, json=payload)
-        response.raise_for_status()
-        data = response.json()
+    last_exception = None
 
-        raw_text = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "{}")
-        )
-        parsed_result = json.loads(raw_text)
+    # Multi-Model Fallback Cascade Loop
+    for model_name in GEMINI_FALLBACK_MODELS:
+        judge_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={gemini_key}"
         logger.info(
-            f"✅ Gemini 2.5 Flash RAG Judge Verdict: {parsed_result.get('verdict')}"
+            f"Attempting Gemini RAG Judge evaluation with Model: '{model_name}'..."
         )
-        return parsed_result
-    except Exception as e:
-        logger.error(f"❌ Gemini RAG Judge Error: {e!s}")
-        return {"status": "error", "message": str(e)}
+
+        try:
+            response = await client.post(judge_url, json=payload)
+            response.raise_for_status()
+            data = response.json()
+
+            raw_text = (
+                data.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [{}])[0]
+                .get("text", "{}")
+            )
+            parsed_result = json.loads(raw_text)
+            parsed_result["evaluator_model"] = model_name
+            logger.info(
+                f"✅ SUCCESS: Gemini Judge ({model_name}) Verdict: {parsed_result.get('verdict')}"
+            )
+            return parsed_result
+
+        except Exception as e:
+            logger.warning(
+                f"⚠️ Gemini Model '{model_name}' failed or rate-limited (HTTP Error: {e!s}). Falling back to next model in chain..."
+            )
+            last_exception = e
+            await asyncio.sleep(1.0)
+
+    logger.error(
+        f"❌ All Gemini Fallback Models exhausted. Final error: {last_exception!s}"
+    )
+    return {"status": "error", "message": str(last_exception)}
