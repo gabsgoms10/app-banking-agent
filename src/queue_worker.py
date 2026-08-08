@@ -11,9 +11,10 @@ import logging
 import os
 import time
 from typing import Any
-import psutil
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
+import psutil
 
 logger = logging.getLogger("app-banking-agent.queue_worker")
 
@@ -153,7 +154,7 @@ def run_worker_loop():
             )
 
             # 4. Process LLM Evaluation outside DB transaction
-            # (In production, invokes run_gemini_rag_judge or local Qwen judge)
+            # (In production, invokes run_rag_judge or local Qwen judge)
             time.sleep(1.0)  # Simulated LLM Inference step
             mark_job_completed(conn, job_id)
             logger.info(f"✅ Job '{job_id}' completed successfully.")

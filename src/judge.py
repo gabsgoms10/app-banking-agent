@@ -8,11 +8,13 @@ Fallback Sequence:
 3. gemini-2.0-flash-lite (Ultra-Fast Fallback)
 4. gemini-1.5-pro (High-Capacity Deep Reasoning Fallback)
 """
+
 import asyncio
 import json
 import logging
 import os
 from typing import Any
+
 import httpx
 from pydantic import BaseModel, Field
 
@@ -49,16 +51,15 @@ class RAGEvalResult(BaseModel):
         ..., description="Direct responsiveness score (0.0 to 1.0) to user query"
     )
     verdict: str = Field(..., description="PASSED or FAILED")
-    feedback: str = Field(..., description="Detailed technical feedback on evaluation")
+    feedback: str = Field(
+        ..., description="Detailed technical feedback on evaluation"
+    )
 
 
 async def run_rag_judge(
     user_query: str, retrieved_chunks: list[dict[str, Any]], agent_response: str
 ) -> dict[str, Any]:
-    """
-    Executes LLM-as-a-Judge with Automatic Multi-Model Fallback for RAG Evaluation.
-    Enforces structured JSON schema and returns evaluation metrics.
-    """
+    """Executes LLM-as-a-Judge with Automatic Multi-Model Fallback for RAG Evaluation."""
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
         logger.warning(
@@ -116,7 +117,9 @@ async def run_rag_judge(
     # Multi-Model Fallback Cascade Loop
     for model_name in FALLBACK_JUDGE_MODELS:
         judge_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
-        logger.info(f"Attempting RAG Judge evaluation with Model: '{model_name}'...")
+        logger.info(
+            f"Attempting RAG Judge evaluation with Model: '{model_name}'..."
+        )
 
         try:
             response = await client.post(judge_url, json=payload)
@@ -143,5 +146,7 @@ async def run_rag_judge(
             last_exception = e
             await asyncio.sleep(1.0)
 
-    logger.error(f"❌ All Fallback Judge Models exhausted. Final error: {last_exception!s}")
+    logger.error(
+        f"❌ All Fallback Judge Models exhausted. Final error: {last_exception!s}"
+    )
     return {"status": "error", "message": str(last_exception)}
