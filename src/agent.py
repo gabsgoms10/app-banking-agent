@@ -46,6 +46,8 @@ PHOENIX_COLLECTOR_HTTP_ENDPOINT = os.getenv(
     "http://arize-phoenix-service.guardrails.svc.cluster.local:4318",
 )
 
+tracer_provider = None
+
 try:
     from openinference.instrumentation.langchain import LangChainInstrumentor
     from opentelemetry import trace
@@ -53,11 +55,11 @@ try:
         OTLPSpanExporter,
     )
     from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
     tracer_provider = TracerProvider()
     tracer_provider.add_span_processor(
-        BatchSpanProcessor(
+        SimpleSpanProcessor(
             OTLPSpanExporter(
                 endpoint=f"{PHOENIX_COLLECTOR_HTTP_ENDPOINT}/v1/traces"
             )
