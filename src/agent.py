@@ -1,11 +1,28 @@
-import os
 import logging
-from langchain_openai import ChatOpenAI
-from langchain.agents import create_openai_tools_agent, AgentExecutor
+import os
+
+import mlflow
+import mlflow.langchain
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai import ChatOpenAI
+
 from src.mcp_client import BANKING_TOOLS
 
 logger = logging.getLogger("app-banking-agent.agent")
+
+# Initialize MLflow Agent Tracing
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "http://mlflow-service.guardrails.svc.cluster.local:5000",
+)
+try:
+    mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+    mlflow.set_experiment("banking-agent-tracing")
+    mlflow.langchain.autolog(log_traces=True)
+    logger.info(f"MLflow Agent Tracing enabled at URI: '{MLFLOW_TRACKING_URI}'")
+except Exception as e:
+    logger.warning(f"MLflow Agent Tracing init deferred: {e!s}")
 
 SYSTEM_PROMPT = """You are Enterprise X's Autonomous Banking Assistant.
 You execute banking queries, account balance checks, PIX financial transfers, and regulatory searches on behalf of users.
@@ -22,9 +39,7 @@ RULES & GOVERNANCE:
 def create_banking_agent(
     model_name: str | None = None, api_base: str | None = None
 ) -> AgentExecutor:
-    """
-    Initializes and returns the LangChain ReAct / OpenAI Tools Banking Agent Executor.
-    """
+    """Initializes and returns the LangChain Tool Calling Banking Agent Executor with MLflow Tracing."""
     model_name = model_name or os.getenv("LLM_MODEL", "qwen2.5:3b")
     api_base = api_base or os.getenv(
         "OPENAI_API_BASE",
@@ -52,7 +67,7 @@ def create_banking_agent(
         ]
     )
 
-    agent = create_openai_tools_agent(llm, BANKING_TOOLS, prompt)
+    agent = create_tool_calling_agent(llm, BANKING_TOOLS, prompt)
 
     return AgentExecutor(
         agent=agent,
